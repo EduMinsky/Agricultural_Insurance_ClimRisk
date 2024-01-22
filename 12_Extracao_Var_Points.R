@@ -54,6 +54,12 @@ var_teste_event_0 <- terra::extract(x = variables_SA_Albers,
 var_treino_event_0$CRS = projecao
 var_treino_event_1$CRS = projecao
 var_teste_event_0$CRS = projecao
+
+#Criando a target variable:
+var_treino_event_0$Target = as.factor(0)
+var_treino_event_1$Target = as.factor(1)
+var_teste_event_0$Target = as.factor(0)
+
 # Salvando como DataFrame essas tabelas:
 bind_rows(var_treino_event_0,var_treino_event_1)%>%write_rds('./FinalData/DF_Treino.rds')
 var_teste_event_0%>%write_rds('./FinalData/DF_Teste.rds')
