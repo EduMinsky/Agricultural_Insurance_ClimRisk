@@ -6,6 +6,9 @@ library(conflicted)
 library(tidymodels)
 library(factoextra)
 library(ggpubr)
+library(viridis)
+library(hrbrthemes)
+
 
 # Vamos criar uma PCA para ver a interação dos dados em um "ambiente" reduzido em dimensionalidade
 df_treino <- read_rds('./FinalData/DF_Treino.rds')
@@ -67,7 +70,15 @@ ggscatter(
 ) +
   stat_mean(aes(color = cluster), size = 4)
 
-# Usar 3 clusters faz mais sentido
-# No proximo script, vamos reutilizar a analise de cluster para começar a fazer a similaridade por cosine
+df_treino$Clusters <- res.km$cluster
+df_treino$Clusters <- as.factor(df_treino$Clusters)
+# Criando novamente a PCA para fazer um plot dos dois pcs
+res.pca <- prcomp(df_treino[1:8], scale = TRUE)
+pcs <- res.pca$x%>%as_tibble
+pcs_1_2 <- tibble(Axes_1 = pcs$PC1, Axes_2 = pcs$PC2)
+pcs_1_2$Clusters <- res.km$cluster
+pcs_1_2$Clusters <- as.factor(pcs_1_2$Clusters)
+ggplot(pcs_1_2, aes(x=Axes_1, y=Axes_2, shape=Clusters, color=Clusters, size=Clusters)) +
+  geom_point()
 
 
