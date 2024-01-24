@@ -17,6 +17,9 @@ cluster_3_Data <- df_treino%>%dplyr::filter(Clusters ==3)
 
 #Criando nosso algoritmo de cosine
 cluster_1_Data%>%slice(1:3)%>%view
+c(742834.2148,319073.4187)
+dist(rbind(c(742834.2148,319073.4187) , c(1030728.5497,884032.2075)))
+rbind(c(742834.2148,319073.4187) , c(1030728.5497,884032.2075))
 
 # Vamos escolher manhattan ou cosseno?
 vec1 = c(-0.7873,-107.9503,51.4156,27.8733,13.8984,457.3835,335.0605,152.6665)
