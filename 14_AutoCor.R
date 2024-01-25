@@ -1,10 +1,24 @@
 library(tidyverse)
-library(conflicted)
-library(lsa)
+library(sf)
+library(spdep)
 set.seed(123)
 # Lendo o dataframe e criando k-means
 df_treino <- read_rds('./FinalData/DF_Treino.rds')
 df_treino <- na.omit(df_treino)
+#Calculando o Global Moran Index - primeiro para o set todo
+df_treino_spat <- st_as_sf(df_treino,coords= c('x','y') )
+df_treino_spat <- df_treino_spat %>% st_set_crs(unique(df_treino_spat$CRS))
+
+# Criando a lista com os buffers dos pontos:
+W_list <- st_buffer(df_treino_spat, dist = 0.1)
+#Converter a lista em binario
+W_list <- poly2nb(W_list)
+W_list <- nb2listw(W_list, style = "B", zero.policy = TRUE)
+# Indice de Moran:
+moran_test <- moran.test(df_treino_spat$ID,W_list)
+
+
+
 df_treino_var_only <- df_treino%>%select(-c(ID,x,y,CRS,Target))
 
 res.km <- kmeans(scale(df_treino_var_only), centers = 3)
