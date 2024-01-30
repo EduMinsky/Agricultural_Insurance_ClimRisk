@@ -7,16 +7,23 @@ set.seed(123)
 # Lendo o dataframe
 df_treino <- read_rds('./FinalData/DF_Treino.rds')
 df_treino <- na.omit(df_treino)
-# Calculando os clusters
-df_treino_var_only <- df_treino%>%select(-c(ID,x,y,CRS,Target))
+df_treino%>%names
 
-res.km <- kmeans(scale(df_treino_var_only), centers = 3)
-cluster_filters <- res.km$cluster
-df_treino$Clusters <- cluster_filters
-# Vamos Separar os grupos
-cluster_1_Data <- df_treino%>%dplyr::filter(Clusters ==1)
-cluster_2_Data <- df_treino%>%dplyr::filter(Clusters ==2)
-cluster_3_Data <- df_treino%>%dplyr::filter(Clusters ==3)
+kmean_groups <- function(df_data,columns_to_leave ){
+    # Preparando o DF para o kmean
+    df_data_filter <- df_data%>%select(-c(columns_to_leave))
+    # Criando o kmean:
+    kmean_result <- kmeans(scale(df_data_filter), centers = 3)
+    clusters_filters <- kmean_result$cluster
+    df_data$Clusters <- clusters_filters
+    # Separando os Clusters
+    clusters_1_Data <- df_data%>%dplyr::filter(Clusters ==1)
+    clusters_2_Data <- df_data%>%dplyr::filter(Clusters ==2)
+    clusters_3_Data <- df_data%>%dplyr::filter(Clusters ==3)
+    return(list(Cluster_1 = clusters_1_Data, Cluster_2 = clusters_2_Data, Cluster_3 = clusters_3_Data))    
+}
+list_groupsdata <- kmean_groups(df_data = df_treino,columns_to_leave = c("x","y","CRS","Target"))
+
 #Calculando o Global Moran Index
 # Criando a funcao para isso
 spatialize_and_moranI <- function(original_data){
@@ -34,104 +41,28 @@ spatialize_and_moranI <- function(original_data){
 # Para o set todo
 moran_test_total <- spatialize_and_moranI(df_treino)
 # Para os clusters:
-moran_test_clu1 <- spatialize_and_moranI(cluster_1_Data)
-moran_test_clu2 <- spatialize_and_moranI(cluster_2_Data)
-moran_test_clu3 <- spatialize_and_moranI(cluster_3_Data)
+moran_test_clu1 <- spatialize_and_moranI(list_groupsdata[[1]])
+moran_test_clu2 <- spatialize_and_moranI(list_groupsdata[[2]])
+moran_test_clu3 <- spatialize_and_moranI(list_groupsdata[[3]])
 
-# Todos os dados estao com um indice de Moran alto, muito acima do experado
-# Logo, precisamos mesmo tratar esse problema.
-# Vamos atacar atraves de um teste de distancia media do vizinho mais proxima
-# Source: https://pro.arcgis.com/en/pro-app/3.1/tool-reference/spatial-statistics/h-how-average-nearest-neighbor-distance-spatial-st.htm
-
-# Criando nosso algoritmo para isso:
-test_df <- cluster_1_Data[1:100,]
-lista_valores <- vector("list")
-for(i in 1:(nrow(test_df)-1)){
-    lista_valores[[i]] <- vector("list")
-    for(j in (i+1): nrow(test_df)){
-        lista_valores[[i]][[j]] <- dist(rbind(test_df[i,c("x","y")], test_df[j,c("x","y")]), upper = F, diag = F)
-    }
+# Criando funcao para preparar os dados para o ANN Index
+chull_shape_area <- function(data_frame,x_col,y_col,CRS){
+    shapefile_ <- st_as_sf(data_frame,coords = c(x_col,y_col))%>%st_set_crs(CRS)
+    convex_hull<-st_convex_hull(st_union(shapefile_)) 
+    area_chull <- st_area(convex_hull)%>%as.numeric
+    return(list(convex_hull_shape = convex_hull, chull_area = area_chull))
 }
+cluster_1_outputs <- chull_shape_area(list_groupsdata[[1]], "x","y",list_groupsdata[[1]]$CRS%>%unique)
+cluster_2_outputs <- chull_shape_area(list_groupsdata[[2]], "x","y",list_groupsdata[[2]]$CRS%>%unique)
+cluster_3_outputs <- chull_shape_area(list_groupsdata[[3]], "x","y",list_groupsdata[[3]]$CRS%>%unique)
 
-valores_unlist <- map(lista_valores,.f = unlist)
-data_frame_distance <- NULL
-for(i in 1: length(valores_unlist)){
-    data_frame_distance[[i]] <- tibble(Value_Distance = valores_unlist[[i]], Posicao_comparado = paste0("Comparacao da linha ", i, " contra o resto"))
-}
-data_frame_distance_all <- do.call(rbind,data_frame_distance)
+# Salvando alguns dados para rodar no arcgis
+cluster_1_outputs$convex_hull_shape%>%st_write('chull_cluster1.shp')
+cluster_2_outputs$convex_hull_shape%>%st_write('chull_cluster2.shp')
+cluster_3_outputs$convex_hull_shape%>%st_write('chull_cluster3.shp')
 
-test_df_sf <- st_as_sf(test_df,coords = c("x","y"))
-test_df_sf <- test_df_sf%>%st_set_crs(test_df_sf$CRS%>%unique)
-chull_test <-st_convex_hull(st_union(test_df_sf)) 
-st_area(chull_test)%>%as.numeric
-distancia_experada <- 0.5/ (sqrt(nrow(test_df)/ st_area(chull_test)%>%as.numeric))
+list_groupsdata[[1]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[1]]$CRS))%>%st_write('Cluster1.shp',append=FALSE)
+list_groupsdata[[2]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[2]]$CRS))%>%st_write('Cluster2.shp')
+list_groupsdata[[3]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[3]]$CRS))%>%st_write('Cluster3.shp')
+df_treino%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(df_treino$CRS))%>%st_write('df_treino.shp')
 
-
-data_frame_distance_all$Value_Distance%>%mean
-
-ratio_distance <- data_frame_distance_all$Value_Distance%>%mean / distancia_experada
-
-
-nearest_neighbor_distance_spatial <- function(data_, coord_x, coord_y, CRS){
-    lista_valores <- vector("list")
-    print("Iniciando o calculo da distancia para cada par")
-    for(i in 1 : (nrow(data_)-1)){
-        lista_valores[[i]] <- vector("list")
-        for(j in (i+1):nrow(data_)){
-            print(i)
-            print(j)
-            lista_valores[[i]][[j]] <- dist(rbind(data_[i,c(coord_x,coord_y)], data_[j,c(coord_x,coord_y)]), upper=F,diag=F)
-
-        }    
-    }
-    print("Iniciando a criacao do dataframe de valores de distancia")
-    valores_unlist <- map(lista_valores,.f = unlist)
-    data_frame_distance <- NULL
-    for(i in 1:length(valores_unlist)){
-        data_frame_distance[[i]] <- tibble(value_Distance = valores_unlist[[i]], Posicao_comparado = paste0("Comparacao da linha ", i , " contra o resto"))
-    }
-    data_frame_distance_all <- do.call(rbind,data_frame_distance)
-    print("Iniciando a criação do Convex Hull para calcular distancia experada")
-    data_sf <- st_as_sf(data_,coords = c(coord_x,coord_y))
-    data_sf <- data_sf%>%st_set_crs(CRS)
-    chull_data <-st_convex_hull(st_union(data_sf))
-    chull_area <- st_area(chull_data)%>%as.numeric
-    print("Calculando distancia media e outras metricas")
-    observed_mean_distance <- mean(data_frame_distance_all$value_Distance)
-    expected_distance <- 0.5/ (sqrt(nrow(data_)/ chull_area))
-    ratio_distance <- observed_mean_distance / expected_distance
-    z_score <- (observed_mean_distance - expected_distance) / (0.26136/sqrt(nrow(data_)/chull_area))
-
-    return(list(Distance_Data_Frame = data_frame_distance_all,observed_mean_distances = observed_mean_distance, expected_distances = expected_distance,
-     Ratio_distance = ratio_distance, z_score_test = z_score, chull_area_data =chull_data ))
-}
-
-teste <-nearest_neighbor_distance_spatial(data_ = cluster_1_Data, coord_x = "x", coord_y = "y", CRS = cluster_1_Data$CRS%>%unique)
-
-teste2 <-nearest_neighbor_distance_spatial(data_ = cluster_2_Data, coord_x = "x", coord_y = "y", CRS = cluster_2_Data$CRS%>%unique)
-
-a = dist(rbind(cluster_1_Data[,c("x","y")], cluster_1_Data[,c("x","y")]), upper=F,diag=F)
-a
-mean(a)
-
-teste$observed_mean_distances
-
-
-
-
-
-dados <- data.frame(x = c(1, 2, 3, 4, 5),
-                    y = c(2, 4, 1, 3, 5))
-
-# Calcular a distância Euclidiana entre as colunas x e y
-distancia <- dist(cluster_1_Data[, c("x", "y")])
-
-# Converter a matriz de distâncias para um dataframe
-distancia_dataframe <- as.data.frame(as.matrix(distancia))
-
-# Ajustar os valores na diagonal inferior para NA
-distancia_dataframe[lower.tri(distancia_dataframe)] <- NA
-
-# Mostrar o dataframe de distâncias com a diagonal inferior eliminada
-a = distancia_dataframe%>%tibble
-a%>%tail
