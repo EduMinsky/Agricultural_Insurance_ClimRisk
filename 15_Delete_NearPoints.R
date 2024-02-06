@@ -4,4 +4,4 @@
 # A partir deste resultado, nos deletamos os pontos que passam desse "limite" da distancia.
 
 # Esquema da análise:
-# load data -> ANN Test -> copy data -> delete points based on expected distance -> ANN Test again for comparison
+# load data -> Calcular ANN global para cada cluster -> Separar entre Targets -> Realizar summarize nearby para cada target com a distancia experada pelo cluster global -> deletar pontos proximos -> calcular ANN para cada cluster por cada target
