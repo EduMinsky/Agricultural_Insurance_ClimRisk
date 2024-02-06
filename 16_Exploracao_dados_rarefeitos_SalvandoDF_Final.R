@@ -1,12 +1,15 @@
 library(tidyverse)
 library(sf)
 library(terra)
+library(factoextra)
+library(ggpubr)
+library(spdep)
 set.seed(123)
 projecao <- '+proj=aea +lat_0=-32 +lon_0=-60 +lat_1=-5 +lat_2=-42 +x_0=0 +y_0=0 +ellps=aust_SA +units=m +no_defs'
 # Lendo shapefiles
-cluster_one_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster_1_pos_delete.shp')%>%dplyr::select(geometry,Target,Clustrs)
-cluster_two_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster_2_pos_delete.shp')%>%dplyr::select(geometry,Target,Clustrs)
-cluster_three_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster_3_pos_delete.shp')%>%dplyr::select(geometry,Target,Clustrs)
+cluster_one_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster1_WithinDistance.shp')%>%dplyr::select(geometry,Target,Clustrs)
+cluster_two_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster2_WithinDistance.shp')%>%dplyr::select(geometry,Target,Clustrs)
+cluster_three_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster3_WithinDistance.shp')%>%dplyr::select(geometry,Target,Clustrs)
 
 # Extraindo novamente os valores das VAR
 variables <- terra::rast('./data_clim/Variables/Variables_present_ready.tif')
@@ -36,6 +39,7 @@ var_cluster_three_rare$Target <- cluster_three_rare$Target
 # Plotando os novos clusters
 
 df_all <- rbind(var_cluster_one_rare,var_cluster_two_rare,var_cluster_three_rare)
+
 res.km <- kmeans(scale(df_all%>%select(-Target,-ID,-x,-y)), centers = 3)
 # Dimension reduction using PCA
 res.pca <- prcomp(df_all%>%select(-Target,-ID,-x,-y),  scale = TRUE)
