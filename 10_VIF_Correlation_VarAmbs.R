@@ -51,7 +51,7 @@ vif_spatial <- function(n_sample, rast_files){
 
 
 tic()
-vif_test = vif_spatial(n_sample = 100,rast_files =stack_raster )
+vif_test = vif_spatial(n_sample = 1000000,rast_files =stack_raster )
 toc()
 vif_test$data_frame_vif_var
 #Salvando
