@@ -4,4 +4,4 @@
 # A partir deste resultado, nos deletamos os pontos que passam desse "limite" da distancia.
 
 # Esquema da análise:
-# load data -> Calcular ANN global para cada cluster -> Separar entre Targets -> Realizar summarize nearby para cada target com a distancia experada pelo cluster global -> deletar pontos proximos -> calcular ANN para cada cluster por cada target
+# calcular ANN -> Realizar summarize nearby pelo valor da distancia media -> deletar os pontos do teste summarize nearby que tem mais de 1 intersecao e que o valor target é zero -> spatial join (one to many) -> deleta pontos onde essa contagem de pontos é maior que 1, o join count é igual a 1 e target é zero -> seleciona os pontos onde o JoinCount é 1
