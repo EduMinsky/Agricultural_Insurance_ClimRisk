@@ -11,7 +11,7 @@ library(hrbrthemes)
 
 
 # Vamos criar uma PCA para ver a interação dos dados em um "ambiente" reduzido em dimensionalidade
-df_treino <- read_rds('./FinalData/DF_Treino.rds')
+df_treino <- read_rds('./FinalData/DF_VAR.rds')
 df_treino <- na.omit(df_treino)
 df_treino <- df_treino%>%select(-c(ID,x,y,CRS))
 
