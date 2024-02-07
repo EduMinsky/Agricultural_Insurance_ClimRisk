@@ -5,7 +5,7 @@ library(purrr)
 set.seed(123)
 
 # Lendo o dataframe
-df_treino <- read_rds('./FinalData/DF_Treino.rds')
+df_treino <- read_rds('./FinalData/DF_VAR.rds')
 df_treino <- na.omit(df_treino)
 df_treino%>%names
 
@@ -57,12 +57,12 @@ cluster_2_outputs <- chull_shape_area(list_groupsdata[[2]], "x","y",list_groupsd
 cluster_3_outputs <- chull_shape_area(list_groupsdata[[3]], "x","y",list_groupsdata[[3]]$CRS%>%unique)
 
 # Salvando alguns dados para rodar no arcgis
-cluster_1_outputs$convex_hull_shape%>%st_write('chull_cluster1.shp')
-cluster_2_outputs$convex_hull_shape%>%st_write('chull_cluster2.shp')
-cluster_3_outputs$convex_hull_shape%>%st_write('chull_cluster3.shp')
+cluster_1_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster1.shp')
+cluster_2_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster2.shp')
+cluster_3_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster3.shp')
 
-list_groupsdata[[1]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[1]]$CRS))%>%st_write('Cluster1.shp',append=FALSE)
-list_groupsdata[[2]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[2]]$CRS))%>%st_write('Cluster2.shp')
-list_groupsdata[[3]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[3]]$CRS))%>%st_write('Cluster3.shp')
-df_treino%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(df_treino$CRS))%>%st_write('df_treino.shp')
+list_groupsdata[[1]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[1]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster1.shp',append=FALSE)
+list_groupsdata[[2]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[2]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster2.shp')
+list_groupsdata[[3]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[3]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster3.shp')
+
 
