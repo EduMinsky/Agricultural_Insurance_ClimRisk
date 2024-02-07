@@ -7,9 +7,9 @@ library(spdep)
 set.seed(123)
 projecao <- '+proj=aea +lat_0=-32 +lon_0=-60 +lat_1=-5 +lat_2=-42 +x_0=0 +y_0=0 +ellps=aust_SA +units=m +no_defs'
 # Lendo shapefiles
-cluster_one_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster1_WithinDistance.shp')%>%dplyr::select(geometry,Target,Clustrs)
-cluster_two_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster2_WithinDistance.shp')%>%dplyr::select(geometry,Target,Clustrs)
-cluster_three_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster3_WithinDistance.shp')%>%dplyr::select(geometry,Target,Clustrs)
+cluster_one_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster1_ReadytoUse.shp')%>%dplyr::select(geometry,Target,Clustrs)
+cluster_two_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster2_ReadytoUse.shp')%>%dplyr::select(geometry,Target,Clustrs)
+cluster_three_rare <- st_read('./SupportData/Shapefiles_data_train/Cluster3_ReadytoUse.shp')%>%dplyr::select(geometry,Target,Clustrs)
 
 # Extraindo novamente os valores das VAR
 variables <- terra::rast('./data_clim/Variables/Variables_present_ready.tif')
@@ -85,4 +85,4 @@ df_treino_spat <- df_treino_spat %>% st_set_crs('+proj=aea +lat_0=-32 +lon_0=-60
     moran_test <- moran.test(df_treino_spat$ID,W_list)
 
 
-df_all%>%write_rds('./FinalData/Final_Train_Data_readyToUse.rds')
+df_all%>%write_rds('./FinalData/Final_Data_readyToUse.rds')
