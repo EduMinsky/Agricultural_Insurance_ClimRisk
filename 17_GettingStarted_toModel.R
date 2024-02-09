@@ -1,36 +1,25 @@
-library(tidyverse)
-library(sf)
-library(tidymodels)
-library(parsnip)
-library(mda)
-library(ggplot2)
-library(brulee)
-library(glmnet)
+library(tidymodels)  # for the parsnip package, along with the rest of tidymodels
+install.packages("dotwhisker")
+# Helper packages
+library(readr)       # for importing data
+library(broom.mixed) # for converting bayesian models to tidy tibbles
+library(dotwhisker)  # for visualizing regression results
+urchins <-
+  # Data were assembled for a tutorial 
+  # at https://www.flutterbys.com.au/stats/tut/tut7.5a.html
+  read_csv("https://tidymodels.org/start/models/urchins.csv")%>% 
+  # Change the names to be a little more verbose
+  setNames(c("food_regime", "initial_volume", "width"))%>% 
+  # Factors are very helpful for modeling, so we convert one column
+  mutate(food_regime = factor(food_regime, levels = c("Initial", "Low", "High")))
+ggplot(urchins,
+       aes(x = initial_volume, 
+           y = width, 
+           group = food_regime, 
+           col = food_regime)) + 
+  geom_point() + 
+  geom_smooth(method = lm, se = FALSE) +
+  scale_color_viridis_d(option = "plasma", end = .7)
 
-data_train <-read_rds('./FinalData/Final_Data_readyToUse.rds')%>%tibble
-data_train$Target <- factor(data_train$Target)
-data_train$Target%>%table
-
-#spat_train <- st_as_sf (data_train,coords=c('x',"y"))
-#spat_train<- spat_train %>% st_difference()
-#a <- spat_train%>%st_drop_geometry 
-
-data_train_model <- data_train %>%select(-c("ID","x","y"))
-splits <- initial_split(data_train_model, strata =Target )
-data_training <- training(splits)
-data_testing <- testing(splits)
-logreg <- logistic_reg(mode = "classification",penalty = tune(), engine = "glmnet")
-
-receita <- recipe(Target ~.,data = data_training) #%>%
-      #step_normalize(all_numeric_predictors())
-
-
-wf <- workflow() %>%
-  add_model(logreg) %>% add_recipe(receita)
-
-v_fold <- vfold_cv(data_training,v = 10, strata = Target)
-trained_lda <- wf %>% tune_grid(v_fold, grid = 10, control = control_grid(), metrics = metric_set(accuracy))
-
-trained_lda%>%show_best(n=5)
-ggplot2::autoplot(trained_lda)
-
+#  parsnip package serve para indicar quais modelos eu quero utilizar
+# Vamos usar logistic regression, xgboost, e dois tipos de SVM (RBF e Polynomial)
