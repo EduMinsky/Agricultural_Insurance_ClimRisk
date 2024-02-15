@@ -1,12 +1,20 @@
 library(tidyverse)
 library(factoextra)
+library(tidymodels)
+library(spatialsample)
+library(rsample)
 set.seed(123)
-data <- read_rds('./FinalData/Final_Data_readyToUse.rds')%>%as_tibble%>%select(-ID,-x,-y) %>% mutate(Target =factor(Target, levels = c("0","1")) )
+
+data1 <- read_rds('./FinalData/Final_Data_readyToUse.rds')%>%as_tibble%>%select(-ID) %>% mutate(Target =factor(Target, levels = c("0","1")) )
+
 
 # Muitas vezes a separação entre pontos para treino teste e validaçao pode levar a criacao de subsets onde os pontos são muito proximos um dos outros
-# Vamos tratar isso atraves de um spatial CV. A diferença é que vamos criar um cv para cada K, de um kmeans
+# Vamos tratar isso atraves de um spatial CV. 
 
-res.km <- kmeans(scale(data%>%select(-Target)), centers = 3)
-data$Clusters <- as.factor(res.km$cluster)
-ggplot(data, aes(x=bio18, y=bio15, shape=Clusters, color=Clusters, size=Clusters)) +
-  geom_point()
+data1_sp <-st_as_sf(data1,coords=c("x","y"),crs = 'proj4: +proj=aea +lat_0=-32 +lon_0=-60 +lat_1=-5 +lat_2=-42 +x_0=0 +y_0=0 +ellps=aust_SA +units=m +no_defs +type=crs')
+cv_spat <- spatial_clustering_cv(data1_sp, v = 4)
+autoplot(cv_spat)
+
+cv_spat$splits[[1]]
+analysis(cv_spat$splits[[1]])
+assessment(cv_spat$splits[[1]])
