@@ -9,20 +9,21 @@ df_treino <- read_rds('./FinalData/DF_VAR.rds')
 df_treino <- na.omit(df_treino)
 df_treino%>%names
 
-kmean_groups <- function(df_data,columns_to_leave ){
+kmean_groups <- function(df_data,columns_to_keep ){
     # Preparando o DF para o kmean
-    df_data_filter <- df_data%>%select(-c(columns_to_leave))
+    df_data_filter <- df_data%>%select(c(columns_to_keep))
     # Criando o kmean:
-    kmean_result <- kmeans(scale(df_data_filter), centers = 3)
+    kmean_result <- kmeans(scale(df_data_filter), centers = 4)
     clusters_filters <- kmean_result$cluster
     df_data$Clusters <- clusters_filters
     # Separando os Clusters
     clusters_1_Data <- df_data%>%dplyr::filter(Clusters ==1)
     clusters_2_Data <- df_data%>%dplyr::filter(Clusters ==2)
     clusters_3_Data <- df_data%>%dplyr::filter(Clusters ==3)
-    return(list(Cluster_1 = clusters_1_Data, Cluster_2 = clusters_2_Data, Cluster_3 = clusters_3_Data))    
+    clusters_4_Data <- df_data%>%dplyr::filter(Clusters ==4)
+    return(list(Cluster_1 = clusters_1_Data, Cluster_2 = clusters_2_Data, Cluster_3 = clusters_3_Data,Cluster_4 = clusters_4_Data))    
 }
-list_groupsdata <- kmean_groups(df_data = df_treino,columns_to_leave = c("x","y","CRS","Target"))
+list_groupsdata <- kmean_groups(df_data = df_treino,columns_to_keep = c("x","y"))
 
 #Calculando o Global Moran Index
 # Criando a funcao para isso
@@ -44,6 +45,7 @@ moran_test_total <- spatialize_and_moranI(df_treino)
 moran_test_clu1 <- spatialize_and_moranI(list_groupsdata[[1]])
 moran_test_clu2 <- spatialize_and_moranI(list_groupsdata[[2]])
 moran_test_clu3 <- spatialize_and_moranI(list_groupsdata[[3]])
+moran_test_clu4 <- spatialize_and_moranI(list_groupsdata[[4]])
 
 # Criando funcao para preparar os dados para o ANN Index
 chull_shape_area <- function(data_frame,x_col,y_col,CRS){
@@ -55,14 +57,17 @@ chull_shape_area <- function(data_frame,x_col,y_col,CRS){
 cluster_1_outputs <- chull_shape_area(list_groupsdata[[1]], "x","y",list_groupsdata[[1]]$CRS%>%unique)
 cluster_2_outputs <- chull_shape_area(list_groupsdata[[2]], "x","y",list_groupsdata[[2]]$CRS%>%unique)
 cluster_3_outputs <- chull_shape_area(list_groupsdata[[3]], "x","y",list_groupsdata[[3]]$CRS%>%unique)
+cluster_4_outputs <- chull_shape_area(list_groupsdata[[4]], "x","y",list_groupsdata[[4]]$CRS%>%unique)
 
 # Salvando alguns dados para rodar no arcgis
-cluster_1_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster1.shp')
-cluster_2_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster2.shp')
-cluster_3_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster3.shp')
+cluster_1_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster1.shp',append=FALSE)
+cluster_2_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster2.shp',append=FALSE)
+cluster_3_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster3.shp',append=FALSE)
+cluster_4_outputs$convex_hull_shape%>%st_write('./SupportData/Shapefiles_data_train/chull_cluster4.shp',append=FALSE)
 
 list_groupsdata[[1]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[1]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster1.shp',append=FALSE)
-list_groupsdata[[2]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[2]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster2.shp')
-list_groupsdata[[3]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[3]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster3.shp')
+list_groupsdata[[2]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[2]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster2.shp',append=FALSE)
+list_groupsdata[[3]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[3]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster3.shp',append=FALSE)
+list_groupsdata[[4]]%>%st_as_sf(coords= c('x','y') )%>% st_set_crs(unique(list_groupsdata[[3]]$CRS))%>%st_write('./SupportData/Shapefiles_data_train/Cluster4.shp',append=FALSE)
 
-
+cluster_1_outputs[[1]]$chull_area
