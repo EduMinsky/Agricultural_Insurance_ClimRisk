@@ -3,6 +3,7 @@ library(factoextra)
 library(tidymodels)
 library(spatialsample)
 library(rsample)
+library(sf)
 set.seed(123)
 
 data1 <- read_rds('./FinalData/Final_Data_readyToUse.rds')%>%as_tibble%>%select(-ID) %>% mutate(Target =factor(Target, levels = c("0","1")) )
@@ -15,6 +16,3 @@ data1_sp <-st_as_sf(data1,coords=c("x","y"),crs = 'proj4: +proj=aea +lat_0=-32 +
 cv_spat <- spatial_clustering_cv(data1_sp, v = 4)
 autoplot(cv_spat)
 
-cv_spat$splits[[1]]
-analysis(cv_spat$splits[[1]])
-assessment(cv_spat$splits[[1]])
