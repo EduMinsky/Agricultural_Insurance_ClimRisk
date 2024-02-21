@@ -35,6 +35,7 @@ var_treino_event_0 <- terra::extract(x = variables_SA_Albers,
                                     ID=TRUE)
 
 
+
 var_treino_event_1 <- terra::extract(x = variables_SA_Albers,
                                     y = treino_event_1_SA_Albers,
                                     method = "simple",
@@ -59,6 +60,6 @@ var_treino_event_1$Target = as.factor(1)
 var_teste_event_0$Target = as.factor(0)
 
 # Salvando como DataFrame essas tabelas:
-bind_rows(var_treino_event_0,var_treino_event_1,var_teste_event_0)%>%write_rds('./FinalData/DF_VAR.rds')
-getwd()
+bind_rows(var_treino_event_0,var_treino_event_1)%>%write_rds('./FinalData/DF_VAR_TRAIN.rds')
 
+var_teste_event_0%>%write_rds('./FinalData/DF_VAR_VALIDATION.rds')
